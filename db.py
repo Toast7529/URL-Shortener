@@ -1,0 +1,21 @@
+import sqlite3
+class DB:
+    def __init__(self, fileName):
+        self.__fileName = fileName
+
+    def _connectDB(self):
+        return sqlite3.connect(self.__fileName)
+    
+    def select(self, query, args=None):
+        try:
+            with self._connectDB() as connection:
+                cursor = connection.cursor()
+                if args:
+                    cursor.execute(query,args)
+                else:
+                    cursor.execute(query)
+                records = cursor.fetchall()
+                return records
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return None
