@@ -37,8 +37,25 @@ def login():
     else:
         return {'status': 401, 'message': 'Unauthorized: Invalid username or password'}, 401
 
-
 @app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    
+    # check password complexity
+    if re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#_])[A-Za-z\d@$!%*?&#_]{8,}$', password) is None:
+        return {'status': 400, 'message': 'Password does not meet the complexity requirements. Password must be at least 8 characters long, and contain one lowercase, uppercase, digit and special character.'}, 400
+    
+    # check if username already exists
+    records = db.select("SELECT Username FROM Account WHERE Username = ?", (username,))
+    if len(records) != 0:
+        return {'status': 409, 'message': 'Conflict: The username already exists. Please choose a different username.'}, 409
+
+    # create account:
+    db.insert("INSERT INTO Account (Username, Password) VALUES (?,?)", (username, hashPassword(password)))
+    print("accoint created")
+    return {'status': 201, 'message': 'Account created successfully.'}, 201
 
 if __name__ == '__main__':
     app.run(port=65000)
