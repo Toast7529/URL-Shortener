@@ -38,6 +38,7 @@ def login():
         return {'status': 401, 'message': 'Unauthorized: Invalid username or password'}, 401
 
 
+@app.route('/register', methods=['POST'])
 
 if __name__ == '__main__':
     app.run(port=65000)
