@@ -1,4 +1,5 @@
 import bcrypt
+import re
 from db import DB
 from flask import Flask, request, flash, redirect, url_for
 
@@ -9,6 +10,11 @@ db = DB("example.db")
 
 def verifyPassword(storedPasswordHash, providedPassword):
     return bcrypt.checkpw(providedPassword.encode('utf-8'), storedPasswordHash)
+
+def hashPassword(password):
+    salt = bcrypt.gensalt() # Generate new salt
+    hashedPassword = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashedPassword
 # Login -> username, password = accessToken
 # Register -> username, password = accessToken
 # GetURLS -> accessToken = json of info
