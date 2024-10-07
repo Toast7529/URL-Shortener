@@ -19,3 +19,15 @@ class DB:
         except sqlite3.Error as e:
             print(f"Database error: {e}")
             return None
+
+    def insert(self, query, args):
+        if args is None:
+            print("Args can not be type None")
+            return
+        try:
+            with self._connectDB() as connection:
+                cursor = connection.cursor()
+                cursor.execute(query, args)
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+
