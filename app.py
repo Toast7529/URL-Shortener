@@ -1,4 +1,6 @@
 import validators
+import random
+import string
 import bcrypt
 import re
 from db import DB
@@ -17,6 +19,11 @@ def hashPassword(password):
     salt = bcrypt.gensalt() # Generate new salt
     hashedPassword = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashedPassword
+
+def generateShortURL(length=6):
+    chars = string.ascii_letters + string.digits
+    shortUrl = ''.join(random.choice(chars) for i in range (length)) 
+    return shortUrl
 # Login -> username, password = accessToken
 # Register -> username, password = accessToken
 # GetURLS -> accessToken = json of info
@@ -63,6 +70,37 @@ def register():
     records = db.select("SELECT UserID FROM Account WHERE Username = ?", (username,))
     accessToken = tokenManager.generateAccessToken(records[0][0])
     return {'status': 201, 'message': 'Account created successfully.', 'token': accessToken}, 201
+
+@app.route('/createURL', methods=['POST'])
+def createURL():
+    accessToken = request.headers.get('Authorization').split(" ")[1]
+    if not accessToken:
+        {'status': 401, 'message': 'Missing token.'}, 401
+
+    decodedToken = tokenManager.decodeAccessToken(accessToken)
+    # Check if decoded token has error
+    if isinstance(decodedToken, dict) and 'message' in decodedToken:
+        return decodedToken, decodedToken['status']
+    userID = decodedToken.get('userID')
+    data = request.get_json()
+    originalUrl = data.get("url")
+    # check if user already has the same url in use
+    records = db.select("SELECT ShortURL FROM ShortenedURLs WHERE UserID = ? AND OriginalURL = ?", (userID, originalUrl))
+    if len(records) != 0:
+        return {'status': 409, 'message': 'Conflict: The url is already in use by you. Please choose a different url.'}, 409
+
+    if not originalUrl or not validators.url(originalUrl):
+        return {'status': 400, 'message': 'Missing URL.'}, 400
+    
+    shortUrlID = generateShortURL()
+    records = db.select("SELECT * FROM ShortenedURLs WHERE ShortURL = ?", (shortUrlID,))
+    # check if shortUrl is already in db
+    while len(records) != 0:
+        shortUrlID = generateShortURL()
+        records = db.select("SELECT * FROM ShortenedURLs WHERE ShortURL = ?", (shortUrlID,))
+    db.insert("INSERT INTO ShortenedURLs (UserID,OriginalURL,ShortURL) VALUES(?,?,?)", (userID, originalUrl, shortUrlID))
+
+    return {'status': 200, 'message': 'URL successfully created.', 'shortenUrl': shortUrlID}, 200
 
 if __name__ == '__main__':
     app.run(port=65000)
