@@ -1,3 +1,4 @@
+import validators
 import bcrypt
 import re
 from db import DB
@@ -45,6 +46,9 @@ def register():
     username = data.get("username")
     password = data.get("password")
 
+    # check username length
+    if len(username) < 8:
+        return {'status': 400, 'message': 'Username does not meet the length requirements. Username must be at least 8 characters long'}, 400
     # check password complexity
     if re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#_])[A-Za-z\d@$!%*?&#_]{8,}$', password) is None:
         return {'status': 400, 'message': 'Password does not meet the complexity requirements. Password must be at least 8 characters long, and contain one lowercase, uppercase, digit and special character.'}, 400
