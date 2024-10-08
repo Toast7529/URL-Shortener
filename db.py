@@ -31,3 +31,13 @@ class DB:
         except sqlite3.Error as e:
             print(f"Database error: {e}")
 
+    def delete(self, query, args):
+        try:
+            with self._connectDB() as connection:
+                cursor = connection.cursor()
+                cursor.execute(query, args)
+                connection.commit()
+                return cursor.rowcount
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return None
