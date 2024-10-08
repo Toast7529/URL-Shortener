@@ -102,5 +102,33 @@ def createURL():
 
     return {'status': 200, 'message': 'URL successfully created.', 'shortenUrl': shortUrlID}, 200
 
+@app.route('/deleteURL', methods=['POST'])
+def deleteURL():
+    accessToken = request.headers.get('Authorization').split(" ")[1]
+    if not accessToken:
+        {'status': 401, 'message': 'Missing token.'}, 401
+
+    decodedToken = tokenManager.decodeAccessToken(accessToken)
+    # Check if decoded token has error
+    if isinstance(decodedToken, dict) and 'message' in decodedToken:
+        return decodedToken, decodedToken['status']
+    
+    userID = decodedToken.get('userID')
+    data = request.get_json()
+    shortenUrlID = data.get("shortenUrl")
+    
+    if not shortenUrlID:
+        return {'status': 400, 'message': 'Missing shortenUrl.'}, 400
+    
+    # Check if shortened URL exists for the user
+    records = db.select("SELECT ShortURL FROM ShortenedURLs WHERE UserID = ? AND ShortURL = ?", (userID, shortenUrlID))
+    if len(records) == 0:
+        return {'status': 404, 'message': 'URL does not exist.'}, 404
+    
+    # Delete the shortened URL from the database
+    db.delete("DELETE FROM ShortenedURLs WHERE UserID = ? AND ShortURL = ?", (userID, shortenUrlID))
+    
+    return {'status': 200, 'message': 'URL successfully deleted.', 'shortenUrl': shortenUrlID}, 200
+
 if __name__ == '__main__':
     app.run(port=65000)
