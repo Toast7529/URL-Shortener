@@ -12,5 +12,8 @@ class TokenManager():
         try:
             data = jwt.decode(token, self.__key, algorithms=[self.__algorithm])
             return data
+        except jwt.ExpiredSignatureError:
+            return {'status': 401, 'message': 'Token has expired.'}
         except jwt.InvalidTokenError:
-            return None
+            return {'status': 401, 'message': 'Invalid token.'}
+
