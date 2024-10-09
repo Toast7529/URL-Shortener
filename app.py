@@ -145,5 +145,26 @@ def deleteURL():
     
     return {'status': 200, 'message': 'URL successfully deleted.', 'shortenUrl': shortenUrlID}, 200
 
+@app.route('/getURLs', methods=['GET'])
+def getURLS():
+    # check token
+    accessToken = getAccessToken()
+    if isinstance(accessToken, tuple):
+        return accessToken
+    print(accessToken)
+    decodedToken = tokenManager.decodeAccessToken(accessToken)
+    if isinstance(decodedToken, dict) and 'message' in decodedToken:
+        return decodedToken, decodedToken['status']
+
+    userID = decodedToken.get('userID')
+    # check if user already has the same url in use
+    records = db.select("SELECT OriginalURL, ShortURL FROM ShortenedURLs WHERE UserID = ?", (userID,))
+    if len(records) == 0:
+        return {'status': 404, 'message': 'No URLs found for this user.'}, 404
+    
+    urls = [{'originalURL': row[0], 'shortenURL': row[1]} for row in records]
+    return {'status': 200, 'urls': urls}, 200
+
+
 if __name__ == '__main__':
     app.run(port=65000)
