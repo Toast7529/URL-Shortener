@@ -28,6 +28,7 @@ class DB:
             with self._connectDB() as connection:
                 cursor = connection.cursor()
                 cursor.execute(query, args)
+                connection.commit()
         except sqlite3.Error as e:
             print(f"Database error: {e}")
 
@@ -36,6 +37,20 @@ class DB:
             with self._connectDB() as connection:
                 cursor = connection.cursor()
                 cursor.execute(query, args)
+                connection.commit()
+                return cursor.rowcount
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return None
+
+    def update(self, query, args=None):
+        try:
+            with self._connectDB() as connection:
+                cursor = connection.cursor()
+                if args:
+                    cursor.execute(query,args)
+                else:
+                    cursor.execute(query)
                 connection.commit()
                 return cursor.rowcount
         except sqlite3.Error as e:
