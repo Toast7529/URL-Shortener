@@ -170,7 +170,6 @@ def getURLInfo():
     accessToken = getAccessToken()
     if isinstance(accessToken, tuple):
         return accessToken
-    print(accessToken)
     decodedToken = tokenManager.decodeAccessToken(accessToken)
     if isinstance(decodedToken, dict) and 'message' in decodedToken:
         return decodedToken, decodedToken['status']
@@ -185,6 +184,29 @@ def getURLInfo():
         return {'status': 404, 'message': 'URL not found.'}, 404
     
     return {'status': 200, 'originalURL': record[0][0], 'clickCount': record[0][1]}, 200
+
+@app.route('/updateURL', methods=['PUT'])
+def updateURL():
+    # check token
+    accessToken = getAccessToken()
+    if isinstance(accessToken, tuple):
+        return accessToken
+    decodedToken = tokenManager.decodeAccessToken(accessToken)
+    if isinstance(decodedToken, dict) and 'message' in decodedToken:
+        return decodedToken, decodedToken['status']
+
+    userID = decodedToken.get('userID')
+    data = request.get_json()
+    shortenURLID = data.get("shortenUrl")
+    newURL = data.get("url")
+
+    if not shortenURLID or not validators.url(newURL):
+        return {'status': 400, 'message': 'Missing URL data.'}, 400
+
+    records = db.update("UPDATE ShortenedURLs SET OriginalURL = ? WHERE UserID = ? AND ShortURL = ?", (newURL, userID, shortenURLID))
+    if records == 0:    # check if records were found and updated
+        return {'status': 404, 'message': 'URL not found or update failed.'}, 404
+    return {'status': 200, 'message': 'URL successfully updated.'}, 200
 
 if __name__ == '__main__':
     app.run(port=65000)
