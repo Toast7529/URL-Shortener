@@ -24,6 +24,20 @@ def generateShortURL(length=6):
     chars = string.ascii_letters + string.digits
     shortUrl = ''.join(random.choice(chars) for i in range (length)) 
     return shortUrl
+
+def getAccessToken():
+    accessToken = request.headers.get('Authorization')
+    if accessToken is None:
+        return {'status': 401, 'message': 'Missing Authorization header.'}, 401
+    if not accessToken.startswith('Bearer '):
+        return {'status': 401, 'message': 'Authorization header must start with "Bearer".'}, 401
+
+    try:
+        token = accessToken.split(" ")[1]
+    except IndexError:
+        return {'status': 401, 'message': 'Invalid token format.'}, 401
+
+    return token
 # Login -> username, password = accessToken
 # Register -> username, password = accessToken
 # GetURLS -> accessToken = json of info
@@ -73,14 +87,15 @@ def register():
 
 @app.route('/createURL', methods=['POST'])
 def createURL():
-    accessToken = request.headers.get('Authorization').split(" ")[1]
-    if not accessToken:
-        {'status': 401, 'message': 'Missing token.'}, 401
-
+    # check token
+    accessToken = getAccessToken()
+    if isinstance(accessToken, tuple):
+        return accessToken
+    print(accessToken)
     decodedToken = tokenManager.decodeAccessToken(accessToken)
-    # Check if decoded token has error
     if isinstance(decodedToken, dict) and 'message' in decodedToken:
         return decodedToken, decodedToken['status']
+
     userID = decodedToken.get('userID')
     data = request.get_json()
     originalUrl = data.get("url")
@@ -104,12 +119,12 @@ def createURL():
 
 @app.route('/deleteURL', methods=['POST'])
 def deleteURL():
-    accessToken = request.headers.get('Authorization').split(" ")[1]
-    if not accessToken:
-        {'status': 401, 'message': 'Missing token.'}, 401
-
+    # check token
+    accessToken = getAccessToken()
+    if isinstance(accessToken, tuple):
+        return accessToken
+    print(accessToken)
     decodedToken = tokenManager.decodeAccessToken(accessToken)
-    # Check if decoded token has error
     if isinstance(decodedToken, dict) and 'message' in decodedToken:
         return decodedToken, decodedToken['status']
     
