@@ -129,8 +129,7 @@ def deleteURL():
         return decodedToken, decodedToken['status']
     
     userID = decodedToken.get('userID')
-    data = request.get_json()
-    shortenUrlID = data.get("shortenUrl")
+    shortenUrlID = request.args.get("shortenUrl")
     
     if not shortenUrlID:
         return {'status': 400, 'message': 'Missing shortenUrl.'}, 400
