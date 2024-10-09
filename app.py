@@ -164,6 +164,27 @@ def getURLS():
     urls = [{'originalURL': row[0], 'shortenURL': row[1]} for row in records]
     return {'status': 200, 'urls': urls}, 200
 
+@app.route('/getURLInfo', methods=['GET'])
+def getURLInfo():
+    # check token
+    accessToken = getAccessToken()
+    if isinstance(accessToken, tuple):
+        return accessToken
+    print(accessToken)
+    decodedToken = tokenManager.decodeAccessToken(accessToken)
+    if isinstance(decodedToken, dict) and 'message' in decodedToken:
+        return decodedToken, decodedToken['status']
+
+    userID = decodedToken.get('userID')
+    shortenUrlID = request.args.get("shortenUrl")
+    # check if user already has the same url in use
+    if shortenUrlID is None:
+        return {'status': 400, 'message': 'Missing shortenUrl.'}, 400
+    record = db.select("SELECT OriginalURL, ClickCount FROM ShortenedURLs WHERE UserID = ? AND ShortURL = ?", (userID, shortenUrlID))
+    if len(record) == 0:
+        return {'status': 404, 'message': 'URL not found.'}, 404
+    
+    return {'status': 200, 'originalURL': record[0][0], 'clickCount': record[0][1]}, 200
 
 if __name__ == '__main__':
     app.run(port=65000)
