@@ -208,5 +208,35 @@ def updateURL():
         return {'status': 404, 'message': 'URL not found or update failed.'}, 404
     return {'status': 200, 'message': 'URL successfully updated.'}, 200
 
+@app.route('/s/<shortenUrlID>', methods=['GET'])
+def redirectURL(shortenUrlID):
+    record = db.select("SELECT OriginalURL, ClickCount FROM ShortenedURLs WHERE ShortURL = ?", (shortenUrlID,))
+    
+    if not record:
+        return {'status': 404, 'message': 'Shortened URL not found.'}, 404
+    
+    originalURL = record[0][0]
+    clickCount = record[0][1]
+    
+    db.update("UPDATE ShortenedURLs SET ClickCount = ? WHERE ShortURL = ?", (clickCount + 1, shortenUrlID))
+    
+    # return redirect url
+    return {'status': 200, 'url': originalURL}, 200
+
+@app.route('/r/<shortenUrlID>', methods=['GET'])
+def redirectURL(shortenUrlID):
+    record = db.select("SELECT OriginalURL, ClickCount FROM ShortenedURLs WHERE ShortURL = ?", (shortenUrlID,))
+    
+    if not record:
+        return {'status': 404, 'message': 'Shortened URL not found.'}, 404
+    
+    originalURL = record[0][0]
+    clickCount = record[0][1]
+    
+    # Increment the click count
+    db.update("UPDATE ShortenedURLs SET ClickCount = ? WHERE ShortURL = ?", (clickCount + 1, shortenUrlID))
+    
+    # Redirect to the original URL
+    return redirect(originalURL)
 if __name__ == '__main__':
     app.run(port=65000)
